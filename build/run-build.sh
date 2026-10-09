@@ -12,6 +12,14 @@ if [ ! -d "$ONIE_DIR" ]; then
   exit 1
 fi
 
+# Restrict ONIE network discovery to the management port (eth0), like a real
+# switch: `dhcp=eth0` on the kernel cmdline makes net_intf() return only eth0
+# instead of probing every wired data port (see onie .../networking.sh). Idempotent.
+MACHINE_MK="$ONIE_DIR/machine/kvm_x86_64/machine.make"
+if [ -f "$MACHINE_MK" ] && ! grep -q 'dhcp=eth0' "$MACHINE_MK"; then
+  echo 'EXTRA_CMDLINE_LINUX = dhcp=eth0' >> "$MACHINE_MK"
+fi
+
 # Stage the crosstool-NG companion tarballs into ONIE's download cache first.
 # Unlike ONIE's own packages, xtools.make fetches these from the OCP mirror
 # ONLY (no upstream fallback), so a mirror outage otherwise aborts the build.
